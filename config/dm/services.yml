@@ -1,0 +1,29 @@
+parameters:
+
+  translator_handler.class:       dmCoreTranslatorHandler
+  translator_handler.options:
+    enabled:                      false
+    save_new_translations:        true
+
+  automatic_translator.class:     dmGoogleTranslator #dmNoTranslator
+  automatic_translator.options:   []
+
+  translation_storage.class:      dmFileTranslationStorage
+  translation_storage.options:    []
+
+services:
+
+  translator_handler:
+    class:                %translator_handler.class%
+    shared:               true
+    arguments:            [ @service_container, %translator_handler.options% ]
+
+  automatic_translator:
+    class:                %automatic_translator.class%
+    shared:               true
+    arguments:            [ @service_container, %automatic_translator.options% ]
+
+  translation_storage:
+    class:                %translation_storage.class%
+    shared:               true
+    arguments:            [ @service_container, %translation_storage.options% ]
