@@ -28,7 +28,7 @@ class dmCoreTranslatorTask extends dmContextTask
    */
   protected function execute($arguments = array(), $options = array())
   {
-    $this->checkDuplicated();
+    //$this->checkDuplicated();
     
     $referenceFile = dmOs::join(sfConfig::get('dm_core_dir'), 'data/dm/i18n/en_fr.yml');
     $referenceTranslations = sfYaml::load(file_get_contents($referenceFile));
@@ -38,21 +38,37 @@ class dmCoreTranslatorTask extends dmContextTask
     
     $storage = $this->get('translation_storage');
     $storage->setCulture($arguments['culture']);
-    
-    $this->logSection('diem', 'Creating translations in '.dmProject::unRootify($storage->getFile()));
-    
+
+    if(!file_exists($storage->getFile()))
+    {
+      $coreFile = dmOs::join(sfConfig::get('dm_core_dir'), 'data/dm/i18n/en_'.$arguments['culture'].'.yml');
+
+      if(file_exists($coreFile))
+      {
+        copy($coreFile, $storage->getFile());
+      }
+    }
+
     $existingTranslations = file_exists($storage->getFile())
     ? (array) sfYaml::load(file_get_contents($storage->getFile()))
     : array();
-    
-    foreach($referenceTranslations as $source => $target)
+
+    $diff = array_diff_key($referenceTranslations, $existingTranslations);
+    $nbDiff = count($diff);
+
+    if(!$nbDiff)
     {
-      if (array_key_exists($source, $existingTranslations))
-      {
-//        $this->logSection('diem', 'skip '.$source);
-        continue;
-      }
-      
+      $this->logBlock($arguments['culture'].' is up to date.', 'INFO_LARGE');
+      return;
+    }
+    else
+    {
+      $this->logSection('diem translator', 'Generating '.$nbDiff.' missing translations in '.$storage->getFile());
+    }
+
+    $it = 1;
+    foreach(array_keys($diff) as $source)
+    {
       try
       {
         $translated = $translator->translate($source);
@@ -67,8 +83,10 @@ class dmCoreTranslatorTask extends dmContextTask
       
       $storage->save($source, $translated);
       
-      $this->logSection('diem translator', sprintf('%s : %s', $source, $translated));
+      $this->logSection('diem translator', sprintf('%d/%d %s -> %s', $it++, $nbDiff, $source, $translated));
     }
+
+    $this->logBlock('Please review these '.$nbDiff.' new translations in '.$storage->getFile(), 'INFO_LARGE');
   }
   
   protected function checkDuplicated()
@@ -80,7 +98,7 @@ class dmCoreTranslatorTask extends dmContextTask
     
     foreach($files as $file)
     {
-      $this->logSection('diem', 'Check duplicated sources in '.dmProject::unrootify($file));
+      $this->logSection('diem translator', 'Checking duplicated sources in '.dmProject::unrootify($file));
       $lines = (array) file($file);
       
       foreach($lines as $lineNumber => $line)
@@ -97,7 +115,7 @@ class dmCoreTranslatorTask extends dmContextTask
         
         if ($count > 1)
         {
-          $this->log(sprintf('Duplicated %s line %d', $source, $lineNumber+1));
+          $this->logBlock(sprintf('Duplicated %s in %s line %d', $source, basename($file), $lineNumber+1), 'COMMENT');
         }
       }
     }

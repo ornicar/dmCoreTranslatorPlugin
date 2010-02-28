@@ -11,11 +11,16 @@ class dmFileTranslationStorage extends dmBaseTranslationStorage
     parent::initialize($options);
     
     $this->filesystem = $this->serviceContainer->getService('filesystem');
+
+    if(!$this->filesystem->mkdir(dmProject::rootify('data/dm/i18n')))
+    {
+      throw new dmException(dmProject::rootify('data/dm/i18n').' is not writable');
+    }
   }
   
   public function getFile()
   {
-    return dmProject::rootify(sprintf('data/dm/i18n/en_%s.yml.generated', $this->getCulture()));
+    return dmProject::rootify(sprintf('data/dm/i18n/en_%s.yml', $this->getCulture()));
   }
   
   public function save($string, $translated)
