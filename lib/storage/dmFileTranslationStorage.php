@@ -54,7 +54,7 @@ class dmFileTranslationStorage extends dmBaseTranslationStorage
   {
     $string     = sprintf('"%s"', str_replace('"', '\\"', $string));
     $translated = sprintf('"%s"', str_replace('"', '\\"', $translated));
-    $line       = sprintf("\n%s: %s", $string, $translated);
+    $line       = sprintf("\n#%s: %s", $string, $translated);
       
     if($fp = fopen($this->getFile(), 'a'))
     {

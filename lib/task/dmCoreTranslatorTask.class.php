@@ -50,7 +50,7 @@ class dmCoreTranslatorTask extends dmContextTask
     }
 
     $existingTranslations = file_exists($storage->getFile())
-    ? (array) sfYaml::load(file_get_contents($storage->getFile()))
+    ? (array) sfYaml::load(str_replace('#"', '"', file_get_contents($storage->getFile())))
     : array();
 
     $diff = array_diff_key($referenceTranslations, $existingTranslations);
@@ -75,7 +75,7 @@ class dmCoreTranslatorTask extends dmContextTask
       }
       catch(Exception $e)
       {
-        $this->logBlock(sprintf('Error while translating "%s" : added an empty translation', $source), 'ERROR');
+        $this->logBlock(sprintf('Error while translating "%s": added an empty translation', $source), 'ERROR');
         $translated = '';
       }
       
@@ -86,7 +86,8 @@ class dmCoreTranslatorTask extends dmContextTask
       $this->logSection('diem translator', sprintf('%d/%d %s -> %s', $it++, $nbDiff, $source, $translated));
     }
 
-    $this->logBlock('Please review these '.$nbDiff.' new translations in '.$storage->getFile(), 'INFO_LARGE');
+    $this->logBlock('Please review these '.$nbDiff.' new translations at the end of '.$storage->getFile(), 'INFO_LARGE');
+    $this->logBlock('The new translations are commented with a #, remove it to activate them.', 'INFO_LARGE');
   }
   
   protected function checkDuplicated()
